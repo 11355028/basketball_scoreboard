@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>NBA PRO 雲端同步記分板系統</title>
+    <title>NBA PRO 雲端同步記分板系統 v2.2</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Anta&family=Oswald:wght@500;700&display=swap" rel="stylesheet">
     <script src="https://unpkg.com/mqtt@4.3.7/dist/mqtt.min.js"></script>
@@ -16,7 +16,7 @@
 <body class="bg-neutral-950 text-neutral-100 min-h-screen transition-colors duration-300 select-none">
 
     <div id="setup-screen" class="max-w-4xl mx-auto px-4 py-8">
-        <h1 class="text-4xl font-extrabold text-center mb-2 tracking-tighter text-white uppercase">🏀 NBA PRO SCOREBOARD</h1>
+        <h1 class="text-4xl font-extrabold text-center mb-2 tracking-tighter text-white uppercase">🏀 NBA PRO SCOREBOARD v2.2</h1>
         <p class="text-center text-neutral-500 text-xs mb-8 uppercase tracking-widest">Multi-Device Cloud Sync Edition</p>
         
         <div class="flex border border-neutral-800 mb-6 bg-neutral-900 p-1">
@@ -43,7 +43,7 @@
                 <div class="space-y-4">
                     <div>
                         <label class="block text-xs uppercase text-neutral-500 mb-1">球隊名稱 / 縮寫</label>
-                        <input type="text" id="setup-name-a" value="LAC" class="w-full bg-neutral-950 border border-neutral-800 rounded-none px-3 py-2 text-white focus:outline-none focus:border-neutral-500 font-bold uppercase">
+                        <input type="text" id="setup-name-a" value="ACD" class="w-full bg-neutral-950 border border-neutral-800 rounded-none px-3 py-2 text-white focus:outline-none focus:border-neutral-500 font-bold uppercase">
                     </div>
                     <div class="grid grid-cols-2 gap-4">
                         <div>
@@ -71,7 +71,7 @@
                 <div class="space-y-4">
                     <div>
                         <label class="block text-xs uppercase text-neutral-500 mb-1">球隊名稱 / 縮寫</label>
-                        <input type="text" id="setup-name-b" value="LAL" class="w-full bg-neutral-950 border border-neutral-800 rounded-none px-3 py-2 text-white focus:outline-none focus:border-neutral-500 font-bold uppercase">
+                        <input type="text" id="setup-name-b" value="BTL" class="w-full bg-neutral-950 border border-neutral-800 rounded-none px-3 py-2 text-white focus:outline-none focus:border-neutral-500 font-bold uppercase">
                     </div>
                     <div class="grid grid-cols-2 gap-4">
                         <div>
@@ -140,7 +140,7 @@
             </div>
         </div>
 
-        <div id="bigscreen-view" class="flex-1 flex flex-col justify-center p-4 max-w-7xl mx-auto w-full gap-4">
+        <div id="bigscreen-view" class="flex-1 flex flex-col justify-center p-4 max-w-[90rem] mx-auto w-full gap-4">
             <div class="grid grid-cols-1 lg:grid-cols-7 border border-neutral-800 bg-neutral-950 shadow-2xl">
                 
                 <div class="lg:col-span-2 p-8 flex flex-col justify-between border-b lg:border-b-0 lg:border-r border-neutral-800 relative">
@@ -156,16 +156,19 @@
                             <div id="big-bonus-a" class="inline-block mt-2 bg-neutral-900 text-neutral-700 px-2 py-0.5 text-xs font-extrabold tracking-widest border border-neutral-800">BONUS</div>
                         </div>
                     </div>
-                    <div class="flex flex-col items-center my-10">
-                        <div class="digital text-10xl font-bold tracking-tight select-none cursor-pointer text-white" id="score-click-a" onclick="adjustScore('A', 1)" oncontextmenu="event.preventDefault(); adjustScore('A', -1);">
+                    
+                    <div class="flex flex-col items-center my-4 justify-center flex-1">
+                        <div class="digital text-[11rem] md:text-[13rem] font-bold tracking-tighter select-none cursor-pointer text-white leading-none" id="score-click-a" onclick="adjustScore('A', 1)" oncontextmenu="event.preventDefault(); adjustScore('A', -1);">
                             <span id="big-score-a">0</span>
                         </div>
-                        <div class="flex gap-2 mt-4 ctrl-btn">
-                            <button onclick="adjustScore('A', 3)" class="bg-neutral-900 border border-neutral-800 text-sm px-4 py-1.5 font-bold hover:bg-neutral-800">+3</button>
-                            <button onclick="adjustScore('A', 2)" class="bg-neutral-900 border border-neutral-800 text-sm px-4 py-1.5 font-bold hover:bg-neutral-800">+2</button>
-                            <button onclick="adjustScore('A', -1)" class="bg-neutral-900 border border-neutral-800 text-sm px-3 py-1.5 text-neutral-500 hover:bg-neutral-800">-1</button>
+                        <div class="flex gap-2 mt-2 ctrl-btn">
+                            <button onclick="adjustScore('A', 3)" class="bg-neutral-900 border border-neutral-800 text-xs px-3 py-1 font-bold hover:bg-neutral-800 text-amber-500">+3</button>
+                            <button onclick="adjustScore('A', 2)" class="bg-neutral-900 border border-neutral-800 text-xs px-3 py-1 font-bold hover:bg-neutral-800 text-white">+2</button>
+                            <button onclick="adjustScore('A', 1)" class="bg-neutral-900 border border-neutral-800 text-xs px-3 py-1 font-bold hover:bg-neutral-800 text-emerald-400">FT +1</button>
+                            <button onclick="adjustScore('A', -1)" class="bg-neutral-900 border border-neutral-800 text-xs px-2 py-1 text-neutral-500 hover:bg-neutral-800">-1</button>
                         </div>
                     </div>
+                    
                     <div class="grid grid-cols-2 border-t border-neutral-900 pt-6">
                         <div class="text-center border-r border-neutral-900">
                             <span class="text-xs text-neutral-500 block uppercase tracking-widest">TEAM FOULS</span>
@@ -234,16 +237,19 @@
                             <img id="big-logo-b" class="max-w-full max-h-full object-contain hidden">
                         </div>
                     </div>
-                    <div class="flex flex-col items-center my-10">
-                        <div class="digital text-10xl font-bold tracking-tight select-none cursor-pointer text-white" id="score-click-b" onclick="adjustScore('B', 1)" oncontextmenu="event.preventDefault(); adjustScore('B', -1);">
+                    
+                    <div class="flex flex-col items-center my-4 justify-center flex-1">
+                        <div class="digital text-[11rem] md:text-[13rem] font-bold tracking-tighter select-none cursor-pointer text-white leading-none" id="score-click-b" onclick="adjustScore('B', 1)" oncontextmenu="event.preventDefault(); adjustScore('B', -1);">
                             <span id="big-score-b">0</span>
                         </div>
-                        <div class="flex gap-2 mt-4 ctrl-btn">
-                            <button onclick="adjustScore('B', 3)" class="bg-neutral-900 border border-neutral-800 text-sm px-4 py-1.5 font-bold hover:bg-neutral-800">+3</button>
-                            <button onclick="adjustScore('B', 2)" class="bg-neutral-900 border border-neutral-800 text-sm px-4 py-1.5 font-bold hover:bg-neutral-800">+2</button>
-                            <button onclick="adjustScore('B', -1)" class="bg-neutral-900 border border-neutral-800 text-sm px-3 py-1.5 text-neutral-500 hover:bg-neutral-800">-1</button>
+                        <div class="flex gap-2 mt-2 ctrl-btn">
+                            <button onclick="adjustScore('B', 3)" class="bg-neutral-900 border border-neutral-800 text-xs px-3 py-1 font-bold hover:bg-neutral-800 text-amber-500">+3</button>
+                            <button onclick="adjustScore('B', 2)" class="bg-neutral-900 border border-neutral-800 text-xs px-3 py-1 font-bold hover:bg-neutral-800 text-white">+2</button>
+                            <button onclick="adjustScore('B', 1)" class="bg-neutral-900 border border-neutral-800 text-xs px-3 py-1 font-bold hover:bg-neutral-800 text-emerald-400">FT +1</button>
+                            <button onclick="adjustScore('B', -1)" class="bg-neutral-900 border border-neutral-800 text-xs px-2 py-1 text-neutral-500 hover:bg-neutral-800">-1</button>
                         </div>
                     </div>
+                    
                     <div class="grid grid-cols-2 border-t border-neutral-900 pt-6">
                         <div class="text-center border-r border-neutral-900">
                             <span class="text-xs text-neutral-500 block uppercase tracking-widest">TEAM FOULS</span>
@@ -272,7 +278,7 @@
                 <div class="grid grid-cols-3 gap-6 items-center text-center">
                     <div class="space-y-2 border-r border-neutral-800 pr-4">
                         <div class="flex justify-between items-center"><span class="font-bold text-sm uppercase text-neutral-300" id="ctrl-name-a">HOME</span><button onclick="setPossession('A')" class="bg-neutral-950 border border-neutral-800 px-2 py-0.5">🏀 球權</button></div>
-                        <div class="flex gap-1"><button onclick="adjustScore('A', 3)" class="w-full bg-neutral-950 border border-neutral-800 py-1 font-bold">+3</button><button onclick="adjustScore('A', 2)" class="w-full bg-neutral-950 border border-neutral-800 py-1 font-bold">+2</button><button onclick="adjustScore('A', 1)" class="w-full bg-neutral-950 border border-neutral-800 py-1 font-bold">+1</button><button onclick="adjustScore('A', -1)" class="w-full bg-neutral-950 border border-neutral-800 py-1 text-neutral-500">-1</button></div>
+                        <div class="flex gap-1"><button onclick="adjustScore('A', 3)" class="w-full bg-neutral-950 border border-neutral-800 py-1 font-bold text-amber-500">+3</button><button onclick="adjustScore('A', 2)" class="w-full bg-neutral-950 border border-neutral-800 py-1 font-bold">+2</button><button onclick="adjustScore('A', 1)" class="w-full bg-neutral-950 border border-neutral-800 py-1 font-bold text-emerald-400">罰球</button><button onclick="adjustScore('A', -1)" class="w-full bg-neutral-950 border border-neutral-800 py-1 text-neutral-500">-1</button></div>
                         <div class="grid grid-cols-2 gap-1">
                             <div class="bg-neutral-950 p-1 border border-neutral-800 flex justify-between items-center"><span>犯規:</span><div class="flex gap-1"><button onclick="adjustFoul('A', 1)" class="bg-neutral-900 px-1.5 font-bold">+</button><button onclick="adjustFoul('A', -1)" class="bg-neutral-900 px-1.5 text-neutral-500">-</button></div></div>
                             <div class="bg-neutral-950 p-1 border border-neutral-800 flex justify-between items-center"><span>暫停:</span><div class="flex gap-1"><button onclick="adjustTimeout('A', -1)" class="bg-neutral-900 px-1.5 font-bold">用</button><button onclick="adjustTimeout('A', 1)" class="bg-neutral-900 px-1.5 text-neutral-500">+</button></div></div>
@@ -293,7 +299,7 @@
                     </div>
                     <div class="space-y-2 border-l border-neutral-800 pl-4">
                         <div class="flex justify-between items-center"><button onclick="setPossession('B')" class="bg-neutral-950 border border-neutral-800 px-2 py-0.5">🏀 球權</button><span class="font-bold text-sm uppercase text-neutral-300" id="ctrl-name-b">AWAY</span></div>
-                        <div class="flex gap-1"><button onclick="adjustScore('B', 3)" class="w-full bg-neutral-950 border border-neutral-800 py-1 font-bold">+3</button><button onclick="adjustScore('B', 2)" class="w-full bg-neutral-950 border border-neutral-800 py-1 font-bold">+2</button><button onclick="adjustScore('B', 1)" class="w-full bg-neutral-950 border border-neutral-800 py-1 font-bold">+1</button><button onclick="adjustScore('B', -1)" class="w-full bg-neutral-950 border border-neutral-800 py-1 text-neutral-500">-1</button></div>
+                        <div class="flex gap-1"><button onclick="adjustScore('B', 3)" class="w-full bg-neutral-950 border border-neutral-800 py-1 font-bold text-amber-500">+3</button><button onclick="adjustScore('B', 2)" class="w-full bg-neutral-950 border border-neutral-800 py-1 font-bold">+2</button><button onclick="adjustScore('B', 1)" class="w-full bg-neutral-950 border border-neutral-800 py-1 font-bold text-emerald-400">罰球</button><button onclick="adjustScore('B', -1)" class="w-full bg-neutral-950 border border-neutral-800 py-1 text-neutral-500">-1</button></div>
                         <div class="grid grid-cols-2 gap-1">
                             <div class="bg-neutral-950 p-1 border border-neutral-800 flex justify-between items-center"><span>犯規:</span><div class="flex gap-1"><button onclick="adjustFoul('B', 1)" class="bg-neutral-900 px-1.5 font-bold">+</button><button onclick="adjustFoul('B', -1)" class="bg-neutral-900 px-1.5 text-neutral-500">-</button></div></div>
                             <div class="bg-neutral-950 p-1 border border-neutral-800 flex justify-between items-center"><span>暫停:</span><div class="flex gap-1"><button onclick="adjustTimeout('B', -1)" class="bg-neutral-900 px-1.5 font-bold">用</button><button onclick="adjustTimeout('B', 1)" class="bg-neutral-900 px-1.5 text-neutral-500">+</button></div></div>
@@ -305,7 +311,6 @@
             <div class="w-full flex justify-center py-12">
                 <div class="bg-neutral-950 border border-neutral-900 flex items-center h-14 shadow-2xl overflow-hidden font-bold text-sm relative">
                     <div id="bc-color-bar-a" class="w-2.5 h-full"></div>
-                    
                     <div class="px-4 flex items-center gap-3 bg-neutral-950">
                         <div class="w-8 h-8 flex items-center justify-center bg-neutral-900 p-0.5 border border-neutral-800">
                             <img id="bc-logo-a" class="max-w-full max-h-full object-contain hidden">
@@ -320,18 +325,13 @@
                         </div>
                         <span id="bc-bonus-a" class="text-[9px] bg-red-600 text-white px-1 py-0.5 rounded-sm hidden animate-pulse">BONUS</span>
                     </div>
-                    
                     <div class="bg-neutral-900 px-5 h-full flex items-center justify-center border-r border-neutral-800 digital text-2xl text-white" id="bc-score-a">0</div>
-                    
                     <div class="px-6 bg-neutral-950 h-full flex flex-col justify-center items-center border-r border-neutral-800 min-w-[130px]">
                         <span class="digital text-xl text-white leading-none tracking-wide" id="bc-main-time">12:00</span>
                         <span class="text-[10px] text-neutral-400 uppercase tracking-widest mt-1 font-bold" id="bc-period">1ST QTR</span>
                     </div>
-                    
                     <div class="bg-neutral-950 px-4 h-full flex items-center justify-center border-r border-neutral-800 digital text-xl text-red-500 min-w-[50px] text-center" id="bc-shot-clock">24</div>
-                    
                     <div class="bg-neutral-900 px-5 h-full flex items-center justify-center border-r border-neutral-800 digital text-2xl text-white" id="bc-score-b">0</div>
-                    
                     <div class="px-4 flex items-center gap-3 bg-neutral-950">
                         <span id="bc-bonus-b" class="text-[9px] bg-red-600 text-white px-1 py-0.5 rounded-sm hidden animate-pulse">BONUS</span>
                         <div class="flex flex-col text-right">
@@ -365,8 +365,8 @@
             currentPeriod: 1,
             statusType: 'normal', 
             possession: 'none',
-            teamA: { name: 'HOME', score: 0, fouls: 0, timeouts: 7, color: '#c8102e', logo: '' },
-            teamB: { name: 'AWAY', score: 0, fouls: 0, timeouts: 7, color: '#552583', logo: '' },
+            teamA: { name: 'ACD', score: 0, fouls: 0, timeouts: 7, color: '#c8102e', logo: '' },
+            teamB: { name: 'BTL', score: 0, fouls: 0, timeouts: 7, color: '#552583', logo: '' },
             config: { periodMin: 12, otMin: 5, shotClockSec: 24, maxTimeouts: 7 }
         };
 
@@ -469,6 +469,7 @@
                         state.currentPeriod = data.currentPeriod; state.statusType = data.statusType;
                         state.possession = data.possession; state.teamA = data.teamA;
                         state.teamB = data.teamB; state.config = data.config;
+                        state.isChromaOn = data.isChromaOn;
                         updateDisplay();
                     } catch (e) { console.error(e); }
                 }
@@ -582,6 +583,16 @@
             } else {
                 document.getElementById('big-shot-clock').className = "digital text-7xl font-bold text-red-600 leading-none";
             }
+
+            // 完全同步綠幕背景狀態 (不分主控或觀賽)
+            const btnChroma = document.getElementById('btn-chroma');
+            if (state.isChromaOn) {
+                document.body.className = "bg-[#00ff00] text-neutral-100 min-h-screen";
+                if(btnChroma) btnChroma.className = "bg-red-600 text-white px-3 py-1 text-xs font-bold uppercase";
+            } else {
+                document.body.className = "bg-neutral-950 text-neutral-100 min-h-screen";
+                if(btnChroma) btnChroma.className = "bg-neutral-900 text-neutral-400 px-3 py-1 text-xs font-bold border border-neutral-800 uppercase";
+            }
         }
 
         function adjustScore(team, amount) {
@@ -603,20 +614,17 @@
             updateDisplay(); broadcastState();
         }
         
-        // 核心邏輯：換節時犯規自動歸零，並套用 OT 或是正常時間
         function adjustPeriod(amount) {
             if (state.isViewer) return;
             pauseTimer();
             state.currentPeriod = Math.max(1, state.currentPeriod + amount);
             state.statusType = 'normal';
             
-            // 每一節或延長賽開始時，團隊犯規自動重算 (重設為0)
             state.teamA.fouls = 0;
             state.teamB.fouls = 0;
 
-            // 判斷時間改套用正規時間還是 OT 時間
             if (state.currentPeriod > 4) {
-                state.mainSeconds = state.config.otMin * 60; // 帶入訂定的 OT 時間
+                state.mainSeconds = state.config.otMin * 60;
             } else {
                 state.mainSeconds = state.config.periodMin * 60;
             }
@@ -674,7 +682,6 @@
             updateDisplay(); broadcastState(); startTimer();
         }
 
-        // 固定為 320 Hz 的美式現場蜂鳴器音調
         function triggerBuzzer() {
             try {
                 const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
@@ -682,7 +689,7 @@
                 const gainNode = audioCtx.createGain();
                 oscillator.connect(gainNode); gainNode.connect(audioCtx.destination);
                 oscillator.type = 'sawtooth'; 
-                oscillator.frequency.setValueAtTime(320, audioCtx.currentTime); // 固定 320Hz
+                oscillator.frequency.setValueAtTime(320, audioCtx.currentTime);
                 gainNode.gain.setValueAtTime(0.7, audioCtx.currentTime);
                 oscillator.start(); setTimeout(() => { oscillator.stop(); }, 1800);
             } catch (e) {}
@@ -711,21 +718,16 @@
             } else {
                 btnBc.className = "bg-white text-neutral-950 px-3 py-1 text-xs font-bold uppercase";
                 btnBig.className = "bg-neutral-900 text-neutral-400 hover:text-white px-3 py-1 text-xs font-bold uppercase border border-neutral-800";
-                if(!state.isViewer) btnChroma.classList.remove('hidden');
+                btnChroma.classList.remove('hidden');
                 bigView.classList.add('hidden'); bcView.classList.remove('hidden');
             }
+            if (!state.isViewer) broadcastState();
         }
 
         function toggleChroma() {
             state.isChromaOn = !state.isChromaOn;
-            const btnChroma = document.getElementById('btn-chroma');
-            if (state.isChromaOn) {
-                document.body.className = "bg-[#00ff00] text-neutral-100 min-h-screen";
-                btnChroma.className = "bg-red-600 text-white px-3 py-1 text-xs font-bold uppercase";
-            } else {
-                document.body.className = "bg-neutral-950 text-neutral-100 min-h-screen";
-                btnChroma.className = "bg-neutral-900 text-neutral-400 px-3 py-1 text-xs font-bold border border-neutral-800 uppercase";
-            }
+            updateDisplay();
+            if (!state.isViewer) broadcastState();
         }
 
         function backToSetup() {
