@@ -2,346 +2,383 @@
 <html lang="zh-TW">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>專業一頁式籃球記分板</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>阿簽牌專業籃球比分顯示及控制器</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@700&family=Noto+Sans+TC:wght@500;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Anta&family=Oswald:wght@500;700&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/mqtt@4.3.7/dist/mqtt.min.js"></script>
     <style>
-        body { font-family: 'Noto Sans TC', sans-serif; }
-        .digital { font-family: 'Orbitron', monospace; }
+        body { font-family: 'Oswald', 'Noto Sans TC', sans-serif; letter-spacing: 0.05em; }
+        .digital { font-family: 'Anta', monospace; }
+        /* 隱藏滾動條 */
+        ::-webkit-scrollbar { display: none; }
     </style>
 </head>
-<body class="bg-slate-900 text-slate-100 min-h-screen transition-colors duration-300">
+<body class="bg-neutral-950 text-neutral-100 min-h-screen transition-colors duration-300 select-none">
 
     <div id="setup-screen" class="max-w-4xl mx-auto px-4 py-8">
-        <h1 class="text-3xl font-bold text-center mb-8 text-orange-500">🏀 專業籃球記分板系統</h1>
+        <h1 class="text-4xl font-extrabold text-center mb-2 tracking-tighter text-white uppercase">🏀 NBA PRO SCOREBOARD SYSTEM</h1>
+        <p class="text-center text-neutral-500 text-xs mb-8 uppercase tracking-widest">Multi-Device Cloud Sync Edition</p>
         
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
-            <div class="bg-slate-800 p-6 rounded-xl border border-slate-700 shadow-xl">
-                <h2 class="text-xl font-bold mb-4 flex items-center gap-2"><span class="w-3 h-3 bg-blue-500 rounded-full"></span> 主隊設定 (Team A)</h2>
+        <div class="flex border border-neutral-800 mb-6 bg-neutral-900 p-1">
+            <button id="tab-host" onclick="switchSetupTab('host')" class="w-1/2 py-3 text-sm font-bold uppercase tracking-wider bg-white text-neutral-950 transition">
+                👑 建立新比賽 (主控裝置)
+            </button>
+            <button id="tab-viewer" onclick="switchSetupTab('viewer')" class="w-1/2 py-3 text-sm font-bold uppercase tracking-wider text-neutral-400 hover:text-white transition">
+                📺 加入已建立比賽 (看板/接收端)
+            </button>
+        </div>
+
+        <div id="viewer-setup-box" class="hidden bg-neutral-900 border border-neutral-800 p-6 mb-6 text-center">
+            <h2 class="text-base font-bold mb-2 uppercase tracking-wider text-amber-500">連線至現場比賽</h2>
+            <p class="text-xs text-neutral-400 mb-4">請輸入主控裝置畫面上顯示的 6 位數房間代碼：</p>
+            <input type="text" id="input-room-code" placeholder="EX: 123456" class="bg-neutral-950 border border-neutral-800 text-center text-2xl font-bold tracking-widest text-white w-48 py-2 rounded-none focus:outline-none focus:border-amber-500 uppercase">
+        </div>
+
+        <div id="host-setup-box" class="grid grid-cols-1 md:grid-cols-2 gap-0 mb-6 border border-neutral-800 bg-neutral-900">
+            <div class="p-6 border-b md:border-b-0 md:border-r border-neutral-800">
+                <div class="flex items-center gap-2 mb-4">
+                    <div class="w-4 h-4 bg-blue-600"></div>
+                    <h2 class="text-lg font-bold uppercase tracking-wider text-neutral-300">HOME TEAM (主隊)</h2>
+                </div>
                 <div class="space-y-4">
                     <div>
-                        <label class="block text-sm text-slate-400 mb-1">隊名</label>
-                        <input type="text" id="setup-name-a" value="主隊" class="w-full bg-slate-700 border border-slate-600 rounded px-3 py-2 text-white focus:outline-none focus:border-orange-500">
+                        <label class="block text-xs uppercase text-neutral-500 mb-1">球隊名稱 / 縮寫</label>
+                        <input type="text" id="setup-name-a" value="LAC" class="w-full bg-neutral-950 border border-neutral-800 rounded-none px-3 py-2 text-white focus:outline-none focus:border-neutral-500 font-bold uppercase">
                     </div>
                     <div class="grid grid-cols-2 gap-4">
                         <div>
-                            <label class="block text-sm text-slate-400 mb-1">代表顏色</label>
-                            <input type="color" id="setup-color-a" value="#1e40af" class="w-full h-10 bg-slate-700 border border-slate-600 rounded p-1 cursor-pointer">
+                            <label class="block text-xs uppercase text-neutral-500 mb-1">隊伍主題色</label>
+                            <input type="color" id="setup-color-a" value="#c8102e" class="w-full h-10 bg-neutral-950 border border-neutral-800 rounded-none p-1 cursor-pointer">
                         </div>
                         <div>
-                            <label class="block text-sm text-slate-400 mb-1">上傳隊徽</label>
-                            <input type="file" id="setup-logo-a" accept="image/*" onchange="handleLogo(this, 'A')" class="text-xs text-slate-400 file:mr-2 file:py-1 file:px-2 file:rounded file:border-0 file:text-xs file:font-semibold file:bg-slate-600 file:text-white hover:file:bg-slate-500 cursor-pointer w-full mt-2">
+                            <label class="block text-xs uppercase text-neutral-500 mb-1">上傳隊徽 (建議&lt;50KB)</label>
+                            <input type="file" id="setup-logo-a" accept="image/*" onchange="handleLogo(this, 'A')" class="text-xs text-neutral-500 file:mr-2 file:py-1 file:px-2 file:rounded-none file:border file:border-neutral-700 file:bg-neutral-800 file:text-neutral-300 w-full mt-1">
                         </div>
                     </div>
-                    <div class="flex justify-center mt-2"><img id="preview-logo-a" class="h-16 w-16 object-contain hidden bg-slate-900 p-1 rounded border border-slate-700"></div>
+                    <div class="flex justify-center pt-2">
+                        <div class="w-16 h-16 bg-neutral-950 border border-neutral-800 flex items-center justify-center p-2">
+                            <img id="preview-logo-a" class="max-w-full max-h-full object-contain hidden">
+                        </div>
+                    </div>
                 </div>
             </div>
 
-            <div class="bg-slate-800 p-6 rounded-xl border border-slate-700 shadow-xl">
-                <h2 class="text-xl font-bold mb-4 flex items-center gap-2"><span class="w-3 h-3 bg-red-500 rounded-full"></span> 客隊設定 (Team B)</h2>
+            <div class="p-6">
+                <div class="flex items-center gap-2 mb-4">
+                    <div class="w-4 h-4 bg-yellow-500"></div>
+                    <h2 class="text-lg font-bold uppercase tracking-wider text-neutral-300">AWAY TEAM (客隊)</h2>
+                </div>
                 <div class="space-y-4">
                     <div>
-                        <label class="block text-sm text-slate-400 mb-1">隊名</label>
-                        <input type="text" id="setup-name-b" value="客隊" class="w-full bg-slate-700 border border-slate-600 rounded px-3 py-2 text-white focus:outline-none focus:border-orange-500">
+                        <label class="block text-xs uppercase text-neutral-500 mb-1">球隊名稱 / 縮寫</label>
+                        <input type="text" id="setup-name-b" value="LAL" class="w-full bg-neutral-950 border border-neutral-800 rounded-none px-3 py-2 text-white focus:outline-none focus:border-neutral-500 font-bold uppercase">
                     </div>
                     <div class="grid grid-cols-2 gap-4">
                         <div>
-                            <label class="block text-sm text-slate-400 mb-1">代表顏色</label>
-                            <input type="color" id="setup-color-b" value="#b91c1c" class="w-full h-10 bg-slate-700 border border-slate-600 rounded p-1 cursor-pointer">
+                            <label class="block text-xs uppercase text-neutral-500 mb-1">隊伍主題色</label>
+                            <input type="color" id="setup-color-b" value="#552583" class="w-full h-10 bg-neutral-950 border border-neutral-800 rounded-none p-1 cursor-pointer">
                         </div>
                         <div>
-                            <label class="block text-sm text-slate-400 mb-1">上傳隊徽</label>
-                            <input type="file" id="setup-logo-b" accept="image/*" onchange="handleLogo(this, 'B')" class="text-xs text-slate-400 file:mr-2 file:py-1 file:px-2 file:rounded file:border-0 file:text-xs file:font-semibold file:bg-slate-600 file:text-white hover:file:bg-slate-500 cursor-pointer w-full mt-2">
+                            <label class="block text-xs uppercase text-neutral-500 mb-1">上傳隊徽 (建議&lt;50KB)</label>
+                            <input type="file" id="setup-logo-b" accept="image/*" onchange="handleLogo(this, 'B')" class="text-xs text-neutral-500 file:mr-2 file:py-1 file:px-2 file:rounded-none file:border file:border-neutral-700 file:bg-neutral-800 file:text-neutral-300 w-full mt-1">
                         </div>
                     </div>
-                    <div class="flex justify-center mt-2"><img id="preview-logo-b" class="h-16 w-16 object-contain hidden bg-slate-900 p-1 rounded border border-slate-700"></div>
+                    <div class="flex justify-center pt-2">
+                        <div class="w-16 h-16 bg-neutral-950 border border-neutral-800 flex items-center justify-center p-2">
+                            <img id="preview-logo-b" class="max-w-full max-h-full object-contain hidden">
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
 
-        <div class="bg-slate-800 p-6 rounded-xl border border-slate-700 shadow-xl mb-8">
-            <h2 class="text-xl font-bold mb-4 text-orange-400">⏱️ 比賽時間設定</h2>
-            <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-4">
+        <div id="rules-setup-box" class="bg-neutral-900 border border-neutral-800 p-6 mb-6">
+            <h2 class="text-sm font-bold mb-4 uppercase tracking-widest text-neutral-400">⏱️ REGULATION & TIMING</h2>
+            <div class="grid grid-cols-2 sm:grid-cols-4 gap-4">
                 <div>
-                    <label class="block text-xs text-slate-400 mb-1">每節時間 (分)</label>
-                    <input type="number" id="cfg-period" value="12" class="w-full bg-slate-700 border border-slate-600 rounded p-2 text-center text-white">
+                    <label class="block text-[11px] uppercase text-neutral-500 mb-1">每節時間 (分)</label>
+                    <input type="number" id="cfg-period" value="12" class="w-full bg-neutral-950 border border-neutral-800 rounded-none p-2 text-center text-white font-bold">
                 </div>
                 <div>
-                    <label class="block text-xs text-slate-400 mb-1">24秒進攻時間</label>
-                    <input type="number" id="cfg-shot" value="24" class="w-full bg-slate-700 border border-slate-600 rounded p-2 text-center text-white">
+                    <label class="block text-[11px] uppercase text-neutral-500 mb-1">進攻秒數 (秒)</label>
+                    <input type="number" id="cfg-shot" value="24" class="w-full bg-neutral-950 border border-neutral-800 rounded-none p-2 text-center text-white font-bold">
                 </div>
                 <div>
-                    <label class="block text-xs text-slate-400 mb-1">每次暫停時間 (秒)</label>
-                    <input type="number" id="cfg-timeout" value="60" class="w-full bg-slate-700 border border-slate-600 rounded p-2 text-center text-white">
-                </div>
-                <div>
-                    <label class="block text-xs text-slate-400 mb-1">小節間時間 (分)</label>
-                    <input type="number" id="cfg-intermission" value="2" class="w-full bg-slate-700 border border-slate-600 rounded p-2 text-center text-white">
-                </div>
-                <div>
-                    <label class="block text-xs text-slate-400 mb-1">中場休息 (分)</label>
-                    <input type="number" id="cfg-halftime" value="15" class="w-full bg-slate-700 border border-slate-600 rounded p-2 text-center text-white">
-                </div>
-                <div>
-                    <label class="block text-xs text-slate-400 mb-1">OT延長賽 (分)</label>
-                    <input type="number" id="cfg-ot" value="5" class="w-full bg-slate-700 border border-slate-600 rounded p-2 text-center text-white">
-                </div>
-                <div>
-                    <label class="block text-xs text-slate-400 mb-1">每隊暫停次數上限</label>
-                    <input type="number" id="cfg-max-timeouts" value="5" class="w-full bg-slate-700 border border-slate-600 rounded p-2 text-center text-white">
+                    <label class="block text-[11px] uppercase text-neutral-500 mb-1">每隊暫停次數</label>
+                    <input type="number" id="cfg-max-timeouts" value="7" class="w-full bg-neutral-950 border border-neutral-800 rounded-none p-2 text-center text-white font-bold">
                 </div>
             </div>
         </div>
 
-        <button onclick="startGame()" class="w-full bg-gradient-to-r from-orange-500 to-amber-600 hover:from-orange-600 hover:to-amber-700 text-white font-bold py-4 px-6 rounded-xl text-lg shadow-lg transform transition active:scale-[0.99]">
-            進入記分板系統
+        <button onclick="initSystem()" class="w-full bg-white hover:bg-neutral-200 text-neutral-950 font-extrabold py-4 px-6 rounded-none text-md uppercase tracking-widest transition duration-150">
+            LAUNCH SYSTEM (啟動系統)
         </button>
     </div>
 
 
     <div id="scoreboard-screen" class="hidden w-full flex flex-col min-h-screen">
         
-        <div id="top-control-bar" class="bg-slate-800 border-b border-slate-700 p-3 flex flex-wrap justify-between items-center gap-3">
-            <div class="flex gap-2">
-                <button onclick="backToSetup()" class="bg-slate-700 hover:bg-slate-600 px-3 py-1.5 rounded text-sm font-medium transition">⚙️ 返回設定</button>
-                <button onclick="downloadPage()" class="bg-emerald-600 hover:bg-emerald-500 px-3 py-1.5 rounded text-sm font-medium transition shadow">💾 下載此網頁至手機/電腦</button>
-            </div>
+        <div id="top-control-bar" class="bg-neutral-950 border-b border-neutral-900 p-2 flex flex-wrap justify-between items-center gap-2 z-50">
             <div class="flex items-center gap-2">
-                <span class="text-sm text-slate-400">目前模式：</span>
-                <button id="btn-mode-big" onclick="switchMode('bigscreen')" class="bg-orange-500 text-white px-3 py-1.5 rounded text-sm font-medium">大螢幕模式</button>
-                <button id="btn-mode-broadcast" onclick="switchMode('broadcast')" class="bg-slate-700 hover:bg-slate-600 text-slate-300 px-3 py-1.5 rounded text-sm font-medium">轉播模式</button>
-                <button id="btn-chroma" onclick="toggleChroma()" class="hidden bg-slate-700 text-slate-300 px-3 py-1.5 rounded text-sm font-medium">切換去背綠幕</button>
+                <button onclick="backToSetup()" class="bg-neutral-900 hover:bg-neutral-800 px-3 py-1 text-xs font-bold uppercase border border-neutral-800">⚙️ EXIT</button>
+                <div class="bg-neutral-900 border border-neutral-800 px-3 py-1 text-xs font-bold flex items-center gap-2">
+                    <span class="text-neutral-500">ROOM:</span>
+                    <span id="display-room-code" class="text-amber-500 tracking-wider font-extrabold">------</span>
+                    <span id="sync-status-dot" class="w-2 h-2 bg-red-500 inline-block animate-pulse"></span>
+                    <span id="sync-status-text" class="text-[10px] text-neutral-400 uppercase">OFFLINE</span>
+                </div>
+                <div id="viewer-badge" class="hidden bg-amber-500/10 border border-amber-500 text-amber-500 text-[10px] px-2 py-0.5 font-bold tracking-widest">LIVE BROADCAST - VIEW ONLY</div>
+            </div>
+            <div class="flex items-center gap-1">
+                <button id="btn-mode-big" onclick="switchMode('bigscreen')" class="bg-white text-neutral-950 px-3 py-1 text-xs font-bold uppercase">ARENA SCREEN</button>
+                <button id="btn-mode-broadcast" onclick="switchMode('broadcast')" class="bg-neutral-900 text-neutral-400 hover:text-white px-3 py-1 text-xs font-bold uppercase border border-neutral-800">BROADCAST (OBS)</button>
+                <button id="btn-chroma" onclick="toggleChroma()" class="hidden bg-neutral-900 text-neutral-400 px-3 py-1 text-xs font-bold border border-neutral-800 uppercase">CHROMA KEY</button>
+                <button onclick="toggleFullscreen()" class="bg-neutral-900 hover:bg-neutral-800 text-amber-500 border border-neutral-800 px-3 py-1 text-xs font-bold uppercase">🖵 TRUE FULLSCREEN</button>
             </div>
         </div>
 
-        <div id="bigscreen-view" class="flex-1 flex flex-col justify-between p-4 max-w-7xl mx-auto w-full gap-6">
-            
-            <div class="bg-slate-800 rounded-2xl border border-slate-700 p-6 shadow-2xl flex flex-col items-center justify-center relative">
-                <div class="flex gap-4 mb-2">
-                    <button onclick="adjustPeriod(-1)" class="bg-slate-700 px-2 rounded text-xs">-</button>
-                    <div class="text-xl font-bold tracking-wider text-amber-400">第 <span id="big-period">1</span> 節 <span id="game-status-text" class="text-xs ml-2 text-slate-400"></span></div>
-                    <button onclick="adjustPeriod(1)" class="bg-slate-700 px-2 rounded text-xs">+</button>
-                </div>
+        <div id="bigscreen-view" class="flex-1 flex flex-col justify-center p-4 max-w-7xl mx-auto w-full gap-4">
+            <div class="grid grid-cols-1 lg:grid-cols-7 border border-neutral-800 bg-neutral-950 shadow-2xl">
                 
-                <div class="digital text-7xl sm:text-8xl md:text-9xl font-bold tracking-wider text-white select-none cursor-pointer my-2" onclick="toggleTimer()">
-                    <span id="big-main-time">12:00</span>
-                </div>
-
-                <div class="digital text-5xl sm:text-6xl font-bold text-red-500 mb-4" id="big-shot-clock">24</div>
-
-                <div class="flex flex-wrap justify-center gap-2">
-                    <button id="main-timer-control" onclick="toggleTimer()" class="bg-green-600 hover:bg-green-500 text-white font-bold px-6 py-2 rounded-lg text-sm transition shadow">開始/暫停時間</button>
-                    <button onclick="resetShotClock(24)" class="bg-red-600 hover:bg-red-500 text-white px-4 py-2 rounded-lg text-sm transition shadow">24秒</button>
-                    <button onclick="resetShotClock(14)" class="bg-amber-600 hover:bg-amber-500 text-white px-4 py-2 rounded-lg text-sm transition shadow">14秒</button>
-                    <button onclick="triggerBuzzer()" class="bg-slate-700 hover:bg-slate-600 text-white px-3 py-2 rounded-lg text-sm transition">🔊 鳴笛</button>
-                </div>
-
-                <div class="mt-4 flex flex-wrap gap-2 border-t border-slate-700 pt-3 w-full justify-center text-xs">
-                    <button onclick="startSpecialTimer('timeout')" class="bg-slate-700 hover:bg-slate-600 px-2 py-1 rounded">⏱️ 暫停計時</button>
-                    <button onclick="startSpecialTimer('intermission')" class="bg-slate-700 hover:bg-slate-600 px-2 py-1 rounded">⏱️ 節間休息</button>
-                    <button onclick="startSpecialTimer('halftime')" class="bg-slate-700 hover:bg-slate-600 px-2 py-1 rounded">⏱️ 中場休息</button>
-                    <button onclick="startSpecialTimer('ot')" class="bg-slate-700 hover:bg-slate-600 px-2 py-1 rounded">⏱️ 延長賽</button>
-                </div>
-            </div>
-
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-6 flex-1 items-stretch">
-                <div id="big-team-card-a" class="rounded-2xl border border-slate-700 p-6 flex flex-col justify-between shadow-2xl relative overflow-hidden transition-colors">
-                    <div class="flex items-center gap-4 border-b border-white/10 pb-4">
-                        <img id="big-logo-a" class="h-16 w-16 object-contain bg-slate-900 rounded-full p-1 hidden">
-                        <h2 id="big-name-a" class="text-3xl font-bold truncate">主隊</h2>
-                    </div>
-                    <div class="flex flex-col items-center my-6">
-                        <span class="text-xs text-slate-400 uppercase tracking-widest mb-1">SCORE</span>
-                        <div class="digital text-8xl md:text-9xl font-bold text-white mb-4" id="big-score-a">0</div>
-                        <div class="flex gap-2">
-                            <button onclick="adjustScore('A', 3)" class="bg-blue-600 hover:bg-blue-500 px-4 py-2 rounded-lg font-bold text-sm">+3</button>
-                            <button onclick="adjustScore('A', 2)" class="bg-blue-600 hover:bg-blue-500 px-4 py-2 rounded-lg font-bold text-sm">+2</button>
-                            <button onclick="adjustScore('A', 1)" class="bg-blue-600 hover:bg-blue-500 px-4 py-2 rounded-lg font-bold text-sm">+1</button>
-                            <button onclick="adjustScore('A', -1)" class="bg-slate-700 hover:bg-slate-600 px-3 py-2 rounded-lg text-sm">-1</button>
+                <div class="lg:col-span-2 p-6 flex flex-col justify-between border-b lg:border-b-0 lg:border-r border-neutral-800 relative">
+                    <div class="flex items-center gap-4">
+                        <div class="w-16 h-16 bg-neutral-900 border border-neutral-800 flex items-center justify-center p-1">
+                            <img id="big-logo-a" class="max-w-full max-h-full object-contain hidden">
+                        </div>
+                        <div>
+                            <div class="flex items-center gap-2">
+                                <span id="big-poss-a" onclick="setPossession('A')" class="text-amber-500 cursor-pointer opacity-30 text-xl ctrl-btn">🏀</span>
+                                <h2 id="big-name-a" class="text-4xl font-extrabold tracking-tighter uppercase">HOME</h2>
+                            </div>
+                            <div id="big-bonus-a" class="inline-block mt-1 bg-neutral-900 text-neutral-700 px-2 py-0.5 text-[10px] font-extrabold tracking-widest border border-neutral-800">BONUS</div>
                         </div>
                     </div>
-                    <div class="grid grid-cols-2 gap-4 border-t border-white/10 pt-4">
-                        <div class="text-center">
-                            <span class="text-xs text-slate-400 block mb-1">團隊犯規</span>
-                            <div class="text-2xl font-bold digital text-amber-500 mb-1" id="big-foul-a">0</div>
-                            <div class="flex justify-center gap-1">
-                                <button onclick="adjustFoul('A', 1)" class="bg-slate-700 hover:bg-slate-600 px-2 py-0.5 rounded text-xs">+</button>
-                                <button onclick="adjustFoul('A', -1)" class="bg-slate-700 hover:bg-slate-600 px-2 py-0.5 rounded text-xs">-</button>
+                    <div class="flex flex-col items-center my-8">
+                        <div class="digital text-9xl font-bold tracking-tight select-none cursor-pointer text-white" id="score-click-a" onclick="adjustScore('A', 1)" oncontextmenu="event.preventDefault(); adjustScore('A', -1);">
+                            <span id="big-score-a">0</span>
+                        </div>
+                        <div class="flex gap-1 mt-2 ctrl-btn">
+                            <button onclick="adjustScore('A', 3)" class="bg-neutral-900 border border-neutral-800 text-xs px-3 py-1 font-bold">+3</button>
+                            <button onclick="adjustScore('A', 2)" class="bg-neutral-900 border border-neutral-800 text-xs px-3 py-1 font-bold">+2</button>
+                            <button onclick="adjustScore('A', -1)" class="bg-neutral-900 border border-neutral-800 text-xs px-2 py-1 text-neutral-500">-1</button>
+                        </div>
+                    </div>
+                    <div class="grid grid-cols-2 border-t border-neutral-900 pt-4">
+                        <div class="text-center border-r border-neutral-900">
+                            <span class="text-[10px] text-neutral-500 block uppercase tracking-widest">FOULS</span>
+                            <div class="text-4xl font-bold digital text-white" id="big-foul-a">0</div>
+                            <div class="flex justify-center gap-1 mt-1 ctrl-btn">
+                                <button onclick="adjustFoul('A', 1)" class="bg-neutral-900 border border-neutral-800 px-2 py-0.5 text-xs font-bold">+</button>
+                                <button onclick="adjustFoul('A', -1)" class="bg-neutral-900 border border-neutral-800 px-2 py-0.5 text-xs text-neutral-500">-</button>
                             </div>
                         </div>
                         <div class="text-center">
-                            <span class="text-xs text-slate-400 block mb-1">剩餘暫停</span>
-                            <div class="text-2xl font-bold digital text-cyan-400 mb-1" id="big-timeout-a">0</div>
-                            <div class="flex justify-center gap-1">
-                                <button onclick="adjustTimeout('A', 1)" class="bg-slate-700 hover:bg-slate-600 px-2 py-0.5 rounded text-xs">+</button>
-                                <button onclick="adjustTimeout('A', -1)" class="bg-slate-700 hover:bg-slate-600 px-2 py-0.5 rounded text-xs">-</button>
+                            <span class="text-[10px] text-neutral-500 block uppercase tracking-widest">TIMEOUTS LEFT</span>
+                            <div id="big-timeouts-bar-a" class="flex justify-center items-center gap-1 h-6 mt-1"></div>
+                            <div class="flex justify-center gap-1 mt-1 ctrl-btn">
+                                <button onclick="adjustTimeout('A', -1)" class="bg-neutral-900 border border-neutral-800 px-2 py-0.5 text-xs font-bold">USE</button>
+                                <button onclick="adjustTimeout('A', 1)" class="bg-neutral-900 border border-neutral-800 px-2 py-0.5 text-xs text-neutral-500">+</button>
                             </div>
+                        </div>
+                    </div>
+                    <div id="big-color-bar-a" class="absolute left-0 top-0 bottom-0 w-1.5"></div>
+                </div>
+
+                <div class="lg:col-span-3 p-6 bg-neutral-950 flex flex-col justify-between items-center text-center border-b lg:border-b-0 lg:border-r border-neutral-800">
+                    <div class="w-full">
+                        <div class="flex justify-center items-center gap-3 border-b border-neutral-900 pb-2">
+                            <button onclick="adjustPeriod(-1)" class="text-neutral-600 hover:text-white text-xs px-1 font-bold ctrl-btn">◄</button>
+                            <span class="text-sm font-bold uppercase tracking-widest text-neutral-400">PERIOD <span id="big-period">1</span></span>
+                            <button onclick="adjustPeriod(1)" class="text-neutral-600 hover:text-white text-xs px-1 font-bold ctrl-btn">►</button>
+                        </div>
+                        <div id="game-status-text" class="text-[10px] text-amber-500 font-bold uppercase mt-1 h-4"></div>
+                    </div>
+
+                    <div class="my-4">
+                        <div class="digital text-8xl md:text-9xl font-bold tracking-tighter text-white cursor-pointer select-none leading-none" id="clock-click" onclick="toggleTimer()">
+                            <span id="big-main-time">12:00</span>
+                        </div>
+                    </div>
+
+                    <div class="w-full max-w-[200px] bg-neutral-900 border border-neutral-800 p-2 text-center mb-4">
+                        <span class="text-[9px] text-neutral-500 block uppercase tracking-widest mb-1">SHOT CLOCK</span>
+                        <div class="digital text-6xl font-bold text-red-600 leading-none" id="big-shot-clock">24</div>
+                    </div>
+
+                    <div class="w-full space-y-2 ctrl-btn">
+                        <div class="grid grid-cols-3 gap-1">
+                            <button id="main-timer-control" onclick="toggleTimer()" class="col-span-1 bg-amber-600 text-neutral-950 font-bold py-2 text-xs uppercase">START/STOP</button>
+                            <button onclick="resetShotClock(24)" class="bg-neutral-900 border border-neutral-800 font-bold text-xs text-red-500">24 SEC</button>
+                            <button onclick="resetShotClock(14)" class="bg-neutral-900 border border-neutral-800 font-bold text-xs text-yellow-500">14 SEC</button>
+                        </div>
+                        <div class="grid grid-cols-2 gap-1 text-[10px]">
+                            <button onclick="startSpecialTimer('timeout', 60)" class="bg-neutral-900 border border-neutral-800 py-1 uppercase font-bold text-neutral-400">TIMEOUT (60s)</button>
+                            <button onclick="triggerBuzzer()" class="bg-neutral-900 border border-neutral-800 py-1 uppercase font-bold text-red-400">🔊 HORN</button>
                         </div>
                     </div>
                 </div>
 
-                <div id="big-team-card-b" class="rounded-2xl border border-slate-700 p-6 flex flex-col justify-between shadow-2xl relative overflow-hidden transition-colors">
-                    <div class="flex items-center gap-4 border-b border-white/10 pb-4">
-                        <img id="big-logo-b" class="h-16 w-16 object-contain bg-slate-900 rounded-full p-1 hidden">
-                        <h2 id="big-name-b" class="text-3xl font-bold truncate">客隊</h2>
-                    </div>
-                    <div class="flex flex-col items-center my-6">
-                        <span class="text-xs text-slate-400 uppercase tracking-widest mb-1">SCORE</span>
-                        <div class="digital text-8xl md:text-9xl font-bold text-white mb-4" id="big-score-b">0</div>
-                        <div class="flex gap-2">
-                            <button onclick="adjustScore('B', 3)" class="bg-red-600 hover:bg-red-500 px-4 py-2 rounded-lg font-bold text-sm">+3</button>
-                            <button onclick="adjustScore('B', 2)" class="bg-red-600 hover:bg-red-500 px-4 py-2 rounded-lg font-bold text-sm">+2</button>
-                            <button onclick="adjustScore('B', 1)" class="bg-red-600 hover:bg-red-500 px-4 py-2 rounded-lg font-bold text-sm">+1</button>
-                            <button onclick="adjustScore('B', -1)" class="bg-slate-700 hover:bg-slate-600 px-3 py-2 rounded-lg text-sm">-1</button>
+                <div class="lg:col-span-2 p-6 flex flex-col justify-between relative">
+                    <div class="flex items-center justify-end gap-4 text-right">
+                        <div>
+                            <div class="flex items-center justify-end gap-2">
+                                <h2 id="big-name-b" class="text-4xl font-extrabold tracking-tighter uppercase">AWAY</h2>
+                                <span id="big-poss-b" onclick="setPossession('B')" class="text-amber-500 cursor-pointer opacity-30 text-xl ctrl-btn">🏀</span>
+                            </div>
+                            <div id="big-bonus-b" class="inline-block mt-1 bg-neutral-900 text-neutral-700 px-2 py-0.5 text-[10px] font-extrabold tracking-widest border border-neutral-800">BONUS</div>
+                        </div>
+                        <div class="w-16 h-16 bg-neutral-900 border border-neutral-800 flex items-center justify-center p-1">
+                            <img id="big-logo-b" class="max-w-full max-h-full object-contain hidden">
                         </div>
                     </div>
-                    <div class="grid grid-cols-2 gap-4 border-t border-white/10 pt-4">
-                        <div class="text-center">
-                            <span class="text-xs text-slate-400 block mb-1">團隊犯規</span>
-                            <div class="text-2xl font-bold digital text-amber-500 mb-1" id="big-foul-b">0</div>
-                            <div class="flex justify-center gap-1">
-                                <button onclick="adjustFoul('B', 1)" class="bg-slate-700 hover:bg-slate-600 px-2 py-0.5 rounded text-xs">+</button>
-                                <button onclick="adjustFoul('B', -1)" class="bg-slate-700 hover:bg-slate-600 px-2 py-0.5 rounded text-xs">-</button>
+                    <div class="flex flex-col items-center my-8">
+                        <div class="digital text-9xl font-bold tracking-tight select-none cursor-pointer text-white" id="score-click-b" onclick="adjustScore('B', 1)" oncontextmenu="event.preventDefault(); adjustScore('B', -1);">
+                            <span id="big-score-b">0</span>
+                        </div>
+                        <div class="flex gap-1 mt-2 ctrl-btn">
+                            <button onclick="adjustScore('B', 3)" class="bg-neutral-900 border border-neutral-800 text-xs px-3 py-1 font-bold">+3</button>
+                            <button onclick="adjustScore('B', 2)" class="bg-neutral-900 border border-neutral-800 text-xs px-3 py-1 font-bold">+2</button>
+                            <button onclick="adjustScore('B', -1)" class="bg-neutral-900 border border-neutral-800 text-xs px-2 py-1 text-neutral-500">-1</button>
+                        </div>
+                    </div>
+                    <div class="grid grid-cols-2 border-t border-neutral-900 pt-4">
+                        <div class="text-center border-r border-neutral-900">
+                            <span class="text-[10px] text-neutral-500 block uppercase tracking-widest">FOULS</span>
+                            <div class="text-4xl font-bold digital text-white" id="big-foul-b">0</div>
+                            <div class="flex justify-center gap-1 mt-1 ctrl-btn">
+                                <button onclick="adjustFoul('B', 1)" class="bg-neutral-900 border border-neutral-800 px-2 py-0.5 text-xs font-bold">+</button>
+                                <button onclick="adjustFoul('B', -1)" class="bg-neutral-900 border border-neutral-800 px-2 py-0.5 text-xs text-neutral-500">-</button>
                             </div>
                         </div>
                         <div class="text-center">
-                            <span class="text-xs text-slate-400 block mb-1">剩餘暫停</span>
-                            <div class="text-2xl font-bold digital text-cyan-400 mb-1" id="big-timeout-b">0</div>
-                            <div class="flex justify-center gap-1">
-                                <button onclick="adjustTimeout('B', 1)" class="bg-slate-700 hover:bg-slate-600 px-2 py-0.5 rounded text-xs">+</button>
-                                <button onclick="adjustTimeout('B', -1)" class="bg-slate-700 hover:bg-slate-600 px-2 py-0.5 rounded text-xs">-</button>
+                            <span class="text-[10px] text-neutral-500 block uppercase tracking-widest">TIMEOUTS LEFT</span>
+                            <div id="big-timeouts-bar-b" class="flex justify-center items-center gap-1 h-6 mt-1"></div>
+                            <div class="flex justify-center gap-1 mt-1 ctrl-btn">
+                                <button onclick="adjustTimeout('B', -1)" class="bg-neutral-900 border border-neutral-800 px-2 py-0.5 text-xs font-bold">USE</button>
+                                <button onclick="adjustTimeout('B', 1)" class="bg-neutral-900 border border-neutral-800 px-2 py-0.5 text-xs text-neutral-500">+</button>
                             </div>
                         </div>
                     </div>
+                    <div id="big-color-bar-b" class="absolute right-0 top-0 bottom-0 w-1.5"></div>
                 </div>
             </div>
         </div>
 
         <div id="broadcast-view" class="hidden flex-1 flex flex-col justify-between p-4">
-            
-            <div class="bg-slate-800 border border-slate-700 rounded-xl p-4 max-w-5xl mx-auto w-full shadow-lg">
-                <div class="text-xs text-slate-400 font-bold mb-3 uppercase tracking-wider border-b border-slate-700 pb-1">⚙️ 轉播控台面板</div>
-                
-                <div class="grid grid-cols-1 md:grid-cols-3 gap-6 items-center">
-                    <div class="flex flex-col items-center gap-2 bg-slate-900/50 p-3 rounded-lg">
-                        <div class="font-bold text-sm" id="ctrl-name-a">主隊</div>
-                        <div class="flex gap-1">
-                            <button onclick="adjustScore('A', 1)" class="bg-slate-700 hover:bg-slate-600 px-2 py-1 rounded text-xs">+1分</button>
-                            <button onclick="adjustScore('A', 2)" class="bg-slate-700 hover:bg-slate-600 px-2 py-1 rounded text-xs">+2分</button>
-                            <button onclick="adjustScore('A', 3)" class="bg-slate-700 hover:bg-slate-600 px-2 py-1 rounded text-xs">+3分</button>
-                            <button onclick="adjustScore('A', -1)" class="bg-slate-800 hover:bg-slate-700 px-2 py-1 rounded text-xs">-1</button>
-                        </div>
-                        <div class="flex gap-4 mt-1 text-xs">
-                            <button onclick="adjustFoul('A', 1)" class="text-amber-500">犯規 +1</button>
-                            <button onclick="adjustFoul('A', -1)" class="text-slate-400">犯規 -1</button>
-                            <button onclick="adjustTimeout('A', -1)" class="text-cyan-400">暫停 -1</button>
-                            <button onclick="adjustTimeout('A', 1)" class="text-slate-400">暫停 +1</button>
+            <div id="broadcast-console" class="bg-neutral-900 border border-neutral-800 p-4 max-w-5xl mx-auto w-full shadow-xl ctrl-btn">
+                <div class="grid grid-cols-3 gap-4 items-center text-center">
+                    <div>
+                        <span class="font-bold text-xs uppercase text-neutral-400" id="ctrl-name-a">HOME</span>
+                        <div class="flex justify-center gap-1 mt-1">
+                            <button onclick="adjustScore('A', 1)" class="bg-neutral-950 border border-neutral-800 px-2 py-1 text-xs font-bold">+1</button>
+                            <button onclick="adjustScore('A', 2)" class="bg-neutral-950 border border-neutral-800 px-2 py-1 text-xs font-bold">+2</button>
                         </div>
                     </div>
-
-                    <div class="flex flex-col items-center gap-2">
-                        <div class="flex gap-2">
-                            <button id="bc-timer-control" onclick="toggleTimer()" class="bg-green-600 hover:bg-green-500 text-white font-bold px-4 py-1.5 rounded text-xs">時間開始/暫停</button>
-                            <button onclick="resetShotClock(24)" class="bg-red-600 px-3 py-1.5 rounded text-xs">24秒</button>
-                            <button onclick="resetShotClock(14)" class="bg-amber-600 px-3 py-1.5 rounded text-xs">14秒</button>
-                        </div>
-                        <div class="flex gap-2 text-xs text-slate-400 mt-1">
-                            <button onclick="adjustPeriod(1)">下一節 (+1)</button>
-                            <button onclick="adjustPeriod(-1)">上一節 (-1)</button>
-                            <button onclick="triggerBuzzer()">🔊 鳴笛</button>
-                        </div>
+                    <div>
+                        <button onclick="toggleTimer()" class="bg-neutral-100 text-neutral-950 text-xs font-extrabold px-4 py-2 uppercase">START/PAUSE CLOCK</button>
                     </div>
-
-                    <div class="flex flex-col items-center gap-2 bg-slate-900/50 p-3 rounded-lg">
-                        <div class="font-bold text-sm" id="ctrl-name-b">客隊</div>
-                        <div class="flex gap-1">
-                            <button onclick="adjustScore('B', 1)" class="bg-slate-700 hover:bg-slate-600 px-2 py-1 rounded text-xs">+1分</button>
-                            <button onclick="adjustScore('B', 2)" class="bg-slate-700 hover:bg-slate-600 px-2 py-1 rounded text-xs">+2分</button>
-                            <button onclick="adjustScore('B', 3)" class="bg-slate-700 hover:bg-slate-600 px-2 py-1 rounded text-xs">+3分</button>
-                            <button onclick="adjustScore('B', -1)" class="bg-slate-800 hover:bg-slate-700 px-2 py-1 rounded text-xs">-1</button>
-                        </div>
-                        <div class="flex gap-4 mt-1 text-xs">
-                            <button onclick="adjustFoul('B', 1)" class="text-amber-500">犯規 +1</button>
-                            <button onclick="adjustFoul('B', -1)" class="text-slate-400">犯規 -1</button>
-                            <button onclick="adjustTimeout('B', -1)" class="text-cyan-400">暫停 -1</button>
-                            <button onclick="adjustTimeout('B', 1)" class="text-slate-400">暫停 +1</button>
+                    <div>
+                        <span class="font-bold text-xs uppercase text-neutral-400" id="ctrl-name-b">AWAY</span>
+                        <div class="flex justify-center gap-1 mt-1">
+                            <button onclick="adjustScore('B', 1)" class="bg-neutral-950 border border-neutral-800 px-2 py-1 text-xs font-bold">+1</button>
+                            <button onclick="adjustScore('B', 2)" class="bg-neutral-950 border border-neutral-800 px-2 py-1 text-xs font-bold">+2</button>
                         </div>
                     </div>
                 </div>
             </div>
 
             <div class="w-full flex justify-center py-12">
-                <div class="bg-slate-950/90 text-white rounded shadow-2xl flex items-center h-14 border border-slate-800 overflow-hidden text-base select-none font-bold">
-                    
-                    <div id="bc-color-bar-a" class="w-3 h-full"></div>
-                    <div class="px-3 flex items-center gap-2 max-w-[140px]">
-                        <img id="bc-logo-a" class="h-7 w-7 object-contain bg-slate-900 rounded-full hidden">
-                        <span id="bc-name-a" class="truncate uppercase tracking-wide">主隊</span>
+                <div class="bg-neutral-950 border border-neutral-900 flex items-center h-12 shadow-2xl overflow-hidden font-bold text-sm relative">
+                    <div id="bc-color-bar-a" class="w-2 h-full"></div>
+                    <div class="px-3 flex items-center gap-2 bg-neutral-950">
+                        <div class="w-6 h-6 flex items-center justify-center bg-neutral-900 p-0.5 border border-neutral-800">
+                            <img id="bc-logo-a" class="max-w-full max-h-full object-contain hidden">
+                        </div>
+                        <span id="bc-poss-a" class="text-amber-500 opacity-0 text-xs">🏀</span>
+                        <span id="bc-name-a" class="uppercase tracking-wider">HOME</span>
+                        <span id="bc-bonus-a" class="text-[9px] bg-red-600 text-white px-1 py-0.5 hidden">BONUS</span>
                     </div>
-                    <div class="flex flex-col px-1 justify-center text-[10px] text-slate-400 border-r border-slate-800 h-full">
-                        <div>F:<span id="bc-foul-a" class="text-amber-500">0</span></div>
-                        <div>T:<span id="bc-timeout-a" class="text-cyan-400">0</span></div>
+                    <div class="bg-neutral-900 px-4 h-full flex items-center justify-center border-r border-neutral-800 digital text-lg text-white" id="bc-score-a">0</div>
+                    <div class="px-5 bg-neutral-950 h-full flex flex-col justify-center items-center border-r border-neutral-800 min-w-[110px]">
+                        <span class="digital text-base text-white leading-none tracking-wide" id="bc-main-time">12:00</span>
+                        <span class="text-[9px] text-neutral-400 uppercase tracking-widest mt-0.5" id="bc-period">1ST QTR</span>
                     </div>
-                    <div class="bg-slate-900 text-center w-14 text-xl font-bold border-r border-slate-800 h-full flex items-center justify-center digital" id="bc-score-a">0</div>
-
-                    <div class="px-4 flex flex-col items-center justify-center bg-slate-950 h-full min-w-[120px]">
-                        <div class="text-[11px] text-amber-500 uppercase tracking-widest leading-none mb-0.5"><span id="bc-period">Q1</span> <span id="bc-status-text" class="text-[9px] text-slate-500"></span></div>
-                        <div class="digital text-lg font-bold text-white leading-none tracking-wider" id="bc-main-time">12:00</div>
+                    <div class="bg-neutral-950 px-3 h-full flex items-center justify-center border-r border-neutral-800 digital text-base text-red-500" id="bc-shot-clock">24</div>
+                    <div class="bg-neutral-900 px-4 h-full flex items-center justify-center border-r border-neutral-800 digital text-lg text-white" id="bc-score-b">0</div>
+                    <div class="px-3 flex items-center gap-2 bg-neutral-950">
+                        <span id="bc-bonus-b" class="text-[9px] bg-red-600 text-white px-1 py-0.5 hidden">BONUS</span>
+                        <span id="bc-name-b" class="uppercase tracking-wider">AWAY</span>
+                        <span id="bc-poss-b" class="text-amber-500 opacity-0 text-xs">🏀</span>
+                        <div class="w-6 h-6 flex items-center justify-center bg-neutral-900 p-0.5 border border-neutral-800">
+                            <img id="bc-logo-b" class="max-w-full max-h-full object-contain hidden">
+                        </div>
                     </div>
-
-                    <div class="bg-slate-900 border-l border-r border-slate-800 px-3 h-full flex items-center justify-center text-red-500 digital text-base font-bold" id="bc-shot-clock">
-                        24
-                    </div>
-
-                    <div class="bg-slate-900 text-center w-14 text-xl font-bold border-l border-slate-800 h-full flex items-center justify-center digital" id="bc-score-b">0</div>
-                    <div class="flex flex-col px-1 justify-center text-[10px] text-slate-400 border-l border-slate-800 h-full text-right">
-                        <div>F:<span id="bc-foul-b" class="text-amber-500">0</span></div>
-                        <div>T:<span id="bc-timeout-b" class="text-cyan-400">0</span></div>
-                    </div>
-                    <div class="px-3 flex items-center gap-2 max-w-[140px] text-right justify-end">
-                        <span id="bc-name-b" class="truncate uppercase tracking-wide">客隊</span>
-                        <img id="bc-logo-b" class="h-7 w-7 object-contain bg-slate-900 rounded-full hidden">
-                    </div>
-                    <div id="bc-color-bar-b" class="w-3 h-full"></div>
-
+                    <div id="bc-color-bar-b" class="w-2 h-full"></div>
                 </div>
             </div>
-
             <div></div>
         </div>
-
     </div>
 
     <script>
-        // 核心狀態管理
+        // 核心資料狀態
         let state = {
+            isViewer: false, // 是否為純看板觀眾端
+            roomCode: '',
             mode: 'bigscreen', 
             isChromaOn: false,
             timerRunning: false,
             mainSeconds: 12 * 60,
             shotSeconds: 24,
             currentPeriod: 1,
-            statusType: 'normal', // 'normal', 'timeout', 'intermission', 'halftime', 'ot'
-            teamA: { name: '主隊', score: 0, fouls: 0, timeouts: 5, color: '#1e40af', logo: '' },
-            teamB: { name: '客隊', score: 0, fouls: 0, timeouts: 5, color: '#b91c1c', logo: '' },
-            config: {
-                periodMin: 12,
-                shotClockSec: 24,
-                timeoutSec: 60,
-                intermissionMin: 2,
-                halftimeMin: 15,
-                otMin: 5,
-                maxTimeouts: 5
-            }
+            statusType: 'normal', 
+            possession: 'none',
+            teamA: { name: 'HOME', score: 0, fouls: 0, timeouts: 7, color: '#c8102e', logo: '' },
+            teamB: { name: 'AWAY', score: 0, fouls: 0, timeouts: 7, color: '#552583', logo: '' },
+            config: { periodMin: 12, shotClockSec: 24, maxTimeouts: 7 }
         };
 
+        let mqttClient = null;
         let countdownInterval = null;
 
-        // 處理隊徽圖片上傳並轉換為 Base64 (用以實現無伺服器離線保存)
+        // 隨機房間代碼生成
+        function generateRoomCode() {
+            return Math.floor(100000 + Math.random() * 900000).toString();
+        }
+
+        // 設定面板頁籤切換
+        function switchSetupTab(type) {
+            const tHost = document.getElementById('tab-host');
+            const tViewer = document.getElementById('tab-viewer');
+            const boxHost = document.getElementById('host-setup-box');
+            const boxRules = document.getElementById('rules-setup-box');
+            const boxViewer = document.getElementById('viewer-setup-box');
+
+            if (type === 'host') {
+                state.isViewer = false;
+                tHost.className = "w-1/2 py-3 text-sm font-bold uppercase tracking-wider bg-white text-neutral-950 transition";
+                tViewer.className = "w-1/2 py-3 text-sm font-bold uppercase tracking-wider text-neutral-400 hover:text-white transition";
+                boxHost.classList.remove('hidden');
+                boxRules.classList.remove('hidden');
+                boxViewer.classList.add('hidden');
+            } else {
+                state.isViewer = true;
+                tViewer.className = "w-1/2 py-3 text-sm font-bold uppercase tracking-wider bg-white text-neutral-950 transition";
+                tHost.className = "w-1/2 py-3 text-sm font-bold uppercase tracking-wider text-neutral-400 hover:text-white transition";
+                boxHost.classList.add('hidden');
+                boxRules.classList.add('hidden');
+                boxViewer.classList.remove('hidden');
+            }
+        }
+
+        // 隊徽 Base64 轉換處理
         function handleLogo(input, team) {
             const file = input.files[0];
             if (file) {
+                if (file.size > 80000) {
+                    alert("隊徽檔案過大！請壓縮至 50KB 以下，否則雲端傳輸可能延遲。");
+                }
                 const reader = new FileReader();
                 reader.onload = function(e) {
                     const base64Img = e.target.result;
@@ -359,46 +396,110 @@
             }
         }
 
-        // 賽前設定確認並啟動記分板
-        function startGame() {
-            // 讀取設定數值
-            state.teamA.name = document.getElementById('setup-name-a').value || '主隊';
-            state.teamA.color = document.getElementById('setup-color-a').value;
-            state.teamB.name = document.getElementById('setup-name-b').value || '客隊';
-            state.teamB.color = document.getElementById('setup-color-b').value;
+        // 初始化系統並連接雲端
+        function initSystem() {
+            if (state.isViewer) {
+                // 觀眾模式
+                const code = document.getElementById('input-room-code').value.trim();
+                if (code.length !== 6 || isNaN(code)) {
+                    alert("請輸入正確的 6 位數房間代碼！");
+                    return;
+                }
+                state.roomCode = code;
+            } else {
+                // 主控模式
+                state.roomCode = generateRoomCode();
+                state.teamA.name = document.getElementById('setup-name-a').value.toUpperCase() || 'HOME';
+                state.teamA.color = document.getElementById('setup-color-a').value;
+                state.teamB.name = document.getElementById('setup-name-b').value.toUpperCase() || 'AWAY';
+                state.teamB.color = document.getElementById('setup-color-b').value;
 
-            state.config.periodMin = parseInt(document.getElementById('cfg-period').value) || 12;
-            state.config.shotClockSec = parseInt(document.getElementById('cfg-shot').value) || 24;
-            state.config.timeoutSec = parseInt(document.getElementById('cfg-timeout').value) || 60;
-            state.config.intermissionMin = parseInt(document.getElementById('cfg-intermission').value) || 2;
-            state.config.halftimeMin = parseInt(document.getElementById('cfg-halftime').value) || 15;
-            state.config.otMin = parseInt(document.getElementById('cfg-ot').value) || 5;
-            state.config.maxTimeouts = parseInt(document.getElementById('cfg-max-timeouts').value) || 5;
+                state.config.periodMin = parseInt(document.getElementById('cfg-period').value) || 12;
+                state.config.shotClockSec = parseInt(document.getElementById('cfg-shot').value) || 24;
+                state.config.maxTimeouts = parseInt(document.getElementById('cfg-max-timeouts').value) || 7;
 
-            // 初始化首次比賽時間
-            state.mainSeconds = state.config.periodMin * 60;
-            state.shotSeconds = state.config.shotClockSec;
-            state.teamA.timeouts = state.config.maxTimeouts;
-            state.teamB.timeouts = state.config.maxTimeouts;
+                state.mainSeconds = state.config.periodMin * 60;
+                state.shotSeconds = state.config.shotClockSec;
+                state.teamA.timeouts = state.config.maxTimeouts;
+                state.teamB.timeouts = state.config.maxTimeouts;
+            }
 
-            // 切換畫面
+            document.getElementById('display-room-code').innerText = state.roomCode;
+            
+            // 權限UI處理：如果是觀眾端，閹割所有操控功能
+            if (state.isViewer) {
+                document.querySelectorAll('.ctrl-btn').forEach(el => el.style.display = 'none');
+                document.getElementById('broadcast-console').style.display = 'none';
+                document.getElementById('viewer-badge').classList.remove('hidden');
+                // 移除大螢幕點擊加分和時鐘的功能
+                document.getElementById('score-click-a').onclick = null;
+                document.getElementById('score-click-b').onclick = null;
+                document.getElementById('clock-click').onclick = null;
+            }
+
+            // 連接公用免費 MQTT 伺服器
+            updateSyncStatus('connecting');
+            mqttClient = mqtt.connect('wss://broker.emqx.io:8084/mqtt');
+
+            mqttClient.on('connect', () => {
+                updateSyncStatus('connected');
+                const topic = `nbascore/room/${state.roomCode}`;
+                mqttClient.subscribe(topic);
+                
+                // 主控端一連線先發送初始包
+                if (!state.isViewer) {
+                    broadcastState();
+                }
+            });
+
+            mqttClient.on('message', (topic, message) => {
+                if (state.isViewer) {
+                    try {
+                        const data = JSON.parse(message.toString());
+                        // 覆蓋本地狀態
+                        state.mainSeconds = data.mainSeconds;
+                        state.shotSeconds = data.shotSeconds;
+                        state.currentPeriod = data.currentPeriod;
+                        state.statusType = data.statusType;
+                        state.possession = data.possession;
+                        state.teamA = data.teamA;
+                        state.teamB = data.teamB;
+                        state.config = data.config;
+                        updateDisplay();
+                    } catch (e) { console.error("解析雲端資料失敗", e); }
+                }
+            });
+
             document.getElementById('setup-screen').classList.add('hidden');
             document.getElementById('scoreboard-screen').classList.remove('hidden');
-
             updateDisplay();
         }
 
-        function backToSetup() {
-            if(confirm("確定要返回設定頁面嗎？目前的比賽分數將會保留。")) {
-                pauseTimer();
-                document.getElementById('scoreboard-screen').classList.add('hidden');
-                document.getElementById('setup-screen').classList.remove('hidden');
+        // 將最新狀態推送到雲端 (僅主控端發送)
+        function broadcastState() {
+            if (state.isViewer || !mqttClient || !mqttClient.connected) return;
+            const topic = `nbascore/room/${state.roomCode}`;
+            mqttClient.publish(topic, JSON.stringify(state), { qos: 0, retain: true });
+        }
+
+        // 更新連線燈號
+        function updateSyncStatus(status) {
+            const dot = document.getElementById('sync-status-dot');
+            const txt = document.getElementById('sync-status-text');
+            if (status === 'connected') {
+                dot.className = "w-2 h-2 bg-emerald-500 inline-block";
+                txt.innerText = state.isViewer ? "LIVE SYNCED" : "HOSTING CLOUD";
+            } else if (status === 'connecting') {
+                dot.className = "w-2 h-2 bg-amber-500 inline-block animate-pulse";
+                txt.innerText = "CONNECTING...";
+            } else {
+                dot.className = "w-2 h-2 bg-red-500 inline-block animate-pulse";
+                txt.innerText = "OFFLINE";
             }
         }
 
-        // 核心更新 UI 渲染
+        // UI 渲染引擎
         function updateDisplay() {
-            // 隊名與顏色應用
             document.getElementById('big-name-a').innerText = state.teamA.name;
             document.getElementById('big-name-b').innerText = state.teamB.name;
             document.getElementById('bc-name-a').innerText = state.teamA.name;
@@ -406,30 +507,20 @@
             document.getElementById('ctrl-name-a').innerText = state.teamA.name;
             document.getElementById('ctrl-name-b').innerText = state.teamB.name;
 
-            // 套用自訂色彩
-            document.getElementById('big-team-card-a').style.backgroundColor = state.teamA.color + "1A"; // 10% 透明度背景
-            document.getElementById('big-team-card-a').style.borderColor = state.teamA.color;
-            document.getElementById('big-team-card-b').style.backgroundColor = state.teamB.color + "1A";
-            document.getElementById('big-team-card-b').style.borderColor = state.teamB.color;
+            document.getElementById('big-color-bar-a').style.backgroundColor = state.teamA.color;
+            document.getElementById('big-color-bar-b').style.backgroundColor = state.teamB.color;
             document.getElementById('bc-color-bar-a').style.backgroundColor = state.teamA.color;
             document.getElementById('bc-color-bar-b').style.backgroundColor = state.teamB.color;
 
-            // 處理隊徽顯示
-            const updateLogoDom = (logoStr, bigDomId, bcDomId) => {
-                const bigDom = document.getElementById(bigDomId);
-                const bcDom = document.getElementById(bcDomId);
-                if (logoStr) {
-                    bigDom.src = logoStr; bigDom.classList.remove('hidden');
-                    bcDom.src = logoStr; bcDom.classList.remove('hidden');
-                } else {
-                    bigDom.classList.add('hidden');
-                    bcDom.classList.add('hidden');
-                }
+            const setLogo = (logo, bigId, bcId) => {
+                const bDom = document.getElementById(bigId);
+                const cDom = document.getElementById(bcId);
+                if(logo) { bDom.src = logo; bDom.classList.remove('hidden'); cDom.src = logo; cDom.classList.remove('hidden'); }
+                else { bDom.classList.add('hidden'); cDom.classList.add('hidden'); }
             };
-            updateLogoDom(state.teamA.logo, 'big-logo-a', 'bc-logo-a');
-            updateLogoDom(state.teamB.logo, 'big-logo-b', 'bc-logo-b');
+            setLogo(state.teamA.logo, 'big-logo-a', 'bc-logo-a');
+            setLogo(state.teamB.logo, 'big-logo-b', 'bc-logo-b');
 
-            // 更新數據
             document.getElementById('big-score-a').innerText = state.teamA.score;
             document.getElementById('big-score-b').innerText = state.teamB.score;
             document.getElementById('bc-score-a').innerText = state.teamA.score;
@@ -437,175 +528,163 @@
 
             document.getElementById('big-foul-a').innerText = state.teamA.fouls;
             document.getElementById('big-foul-b').innerText = state.teamB.fouls;
-            document.getElementById('bc-foul-a').innerText = state.teamA.fouls;
-            document.getElementById('bc-foul-b').innerText = state.teamB.fouls;
-
-            document.getElementById('big-timeout-a').innerText = state.teamA.timeouts;
-            document.getElementById('big-timeout-b').innerText = state.teamB.timeouts;
-            document.getElementById('bc-timeout-a').innerText = state.teamA.timeouts;
-            document.getElementById('bc-timeout-b').innerText = state.teamB.timeouts;
-
-            // 更新小節
-            let periodText = state.currentPeriod <= 4 ? state.currentPeriod : `OT${state.currentPeriod - 4}`;
-            document.getElementById('big-period').innerText = periodText;
-            document.getElementById('bc-period').innerText = state.currentPeriod <= 4 ? `Q${state.currentPeriod}` : `OT${state.currentPeriod - 4}`;
-
-            // 更新狀態文字 (例如顯示：暫停中、節間休息)
-            let statusLabel = "";
-            if (state.statusType === 'timeout') statusLabel = "【暫停計時】";
-            else if (state.statusType === 'intermission') statusLabel = "【節間休息】";
-            else if (state.statusType === 'halftime') statusLabel = "【中場休息】";
-            else if (state.statusType === 'ot') statusLabel = "【延長賽準備】";
             
-            document.getElementById('game-status-text').innerText = statusLabel;
-            document.getElementById('bc-status-text').innerText = statusLabel;
+            const applyBonus = (fouls, bigBonusId, bcBonusId) => {
+                const bigB = document.getElementById(bigBonusId);
+                const bcB = document.getElementById(bcBonusId);
+                if (fouls >= 5) {
+                    bigB.className = "inline-block mt-1 bg-red-600 text-white px-2 py-0.5 text-[10px] font-extrabold tracking-widest border border-red-500 animate-pulse";
+                    bcB.classList.remove('hidden');
+                } else {
+                    bigB.className = "inline-block mt-1 bg-neutral-900 text-neutral-700 px-2 py-0.5 text-[10px] font-extrabold tracking-widest border border-neutral-800";
+                    bcB.classList.add('hidden');
+                }
+            };
+            applyBonus(state.teamA.fouls, 'big-bonus-a', 'bc-bonus-a');
+            applyBonus(state.teamB.fouls, 'big-bonus-b', 'bc-bonus-b');
 
-            // 格式化主時間格式 MM:SS
+            const renderTimeouts = (timeouts, containerId) => {
+                const container = document.getElementById(containerId);
+                container.innerHTML = '';
+                for(let i=0; i < state.config.maxTimeouts; i++) {
+                    const bar = document.createElement('div');
+                    bar.className = `w-2 h-1 border ${i < timeouts ? 'bg-cyan-400 border-cyan-400' : 'bg-transparent border-neutral-800'}`;
+                    container.appendChild(bar);
+                }
+            };
+            renderTimeouts(state.teamA.timeouts, 'big-timeouts-bar-a');
+            renderTimeouts(state.teamB.timeouts, 'big-timeouts-bar-b');
+
+            document.getElementById('big-poss-a').style.opacity = state.possession === 'A' ? '1' : '0.1';
+            document.getElementById('big-poss-b').style.opacity = state.possession === 'B' ? '1' : '0.1';
+            document.getElementById('bc-poss-a').style.opacity = state.possession === 'A' ? '1' : '0';
+            document.getElementById('bc-poss-b').style.opacity = state.possession === 'B' ? '1' : '0';
+
+            let periodSuffix = ["ST QTR", "ND QTR", "RD QTR", "TH QTR"];
+            let pText = state.currentPeriod <= 4 ? periodSuffix[state.currentPeriod-1] : `OT ${state.currentPeriod-4}`;
+            document.getElementById('big-period').innerText = state.currentPeriod;
+            document.getElementById('bc-period').innerText = pText;
+
+            document.getElementById('game-status-text').innerText = state.statusType === 'timeout' ? "--- TIMEOUT ---" : "";
+
             let mins = Math.floor(state.mainSeconds / 60);
             let secs = state.mainSeconds % 60;
             let timeStr = `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
             document.getElementById('big-main-time').innerText = timeStr;
             document.getElementById('bc-main-time').innerText = timeStr;
 
-            // 進攻時間
-            let shotText = state.shotSeconds >= 0 ? state.shotSeconds : 0;
-            document.getElementById('big-shot-clock').innerText = shotText;
-            document.getElementById('bc-shot-clock').innerText = shotText;
-            
-            if (state.shotSeconds <= 5 && state.shotSeconds > 0) {
-                document.getElementById('big-shot-clock').classList.add('text-orange-500');
+            document.getElementById('big-shot-clock').innerText = state.shotSeconds;
+            document.getElementById('bc-shot-clock').innerText = state.shotSeconds;
+            if(state.shotSeconds <= 5 && state.shotSeconds > 0) {
+                document.getElementById('big-shot-clock').className = "digital text-6xl font-bold text-yellow-500 leading-none";
             } else if (state.shotSeconds === 0) {
-                document.getElementById('big-shot-clock').classList.remove('text-orange-500');
-                document.getElementById('big-shot-clock').classList.add('text-red-600', 'animate-pulse');
+                document.getElementById('big-shot-clock').className = "digital text-6xl font-bold text-red-600 leading-none animate-pulse";
             } else {
-                document.getElementById('big-shot-clock').className = "digital text-5xl sm:text-6xl font-bold text-red-500 mb-4";
+                document.getElementById('big-shot-clock').className = "digital text-6xl font-bold text-red-600 leading-none";
             }
         }
 
-        // 數據調整邏輯
+        // 主控修改邏輯 (全內建自動同步發送)
         function adjustScore(team, amount) {
+            if (state.isViewer) return;
             if (team === 'A') state.teamA.score = Math.max(0, state.teamA.score + amount);
             else state.teamB.score = Math.max(0, state.teamB.score + amount);
-            updateDisplay();
+            updateDisplay(); broadcastState();
         }
         function adjustFoul(team, amount) {
+            if (state.isViewer) return;
             if (team === 'A') state.teamA.fouls = Math.max(0, state.teamA.fouls + amount);
             else state.teamB.fouls = Math.max(0, state.teamB.fouls + amount);
-            updateDisplay();
+            updateDisplay(); broadcastState();
         }
         function adjustTimeout(team, amount) {
+            if (state.isViewer) return;
             if (team === 'A') state.teamA.timeouts = Math.max(0, Math.min(state.config.maxTimeouts, state.teamA.timeouts + amount));
             else state.teamB.timeouts = Math.max(0, Math.min(state.config.maxTimeouts, state.teamB.timeouts + amount));
-            updateDisplay();
+            updateDisplay(); broadcastState();
         }
         function adjustPeriod(amount) {
+            if (state.isViewer) return;
             state.currentPeriod = Math.max(1, state.currentPeriod + amount);
             state.statusType = 'normal';
-            updateDisplay();
+            updateDisplay(); broadcastState();
+        }
+        function setPossession(team) {
+            if (state.isViewer) return;
+            state.possession = state.possession === team ? 'none' : team;
+            updateDisplay(); broadcastState();
+        }
+        function resetShotClock(secs) {
+            if (state.isViewer) return;
+            state.shotSeconds = secs;
+            updateDisplay(); broadcastState();
         }
 
-        // 時鐘計時核心控制
+        // 時鐘計時控制
         function toggleTimer() {
-            if (state.timerRunning) {
-                pauseTimer();
-            } else {
-                startTimer();
-            }
+            if (state.isViewer) return;
+            if (state.timerRunning) pauseTimer();
+            else startTimer();
         }
 
         function startTimer() {
             if (state.timerRunning) return;
             state.timerRunning = true;
-            
-            document.getElementById('main-timer-control').innerText = "暫停時間";
-            document.getElementById('main-timer-control').className = "bg-red-600 hover:bg-red-500 text-white font-bold px-6 py-2 rounded-lg text-sm transition shadow";
-            document.getElementById('bc-timer-control').innerText = "暫停";
-            document.getElementById('bc-timer-control').className = "bg-red-600 text-white font-bold px-4 py-1.5 rounded text-xs";
+            document.getElementById('main-timer-control').className = "col-span-1 bg-red-600 text-white font-bold py-2 text-xs uppercase";
 
             countdownInterval = setInterval(() => {
                 if (state.mainSeconds > 0) {
                     state.mainSeconds--;
-                    // 只有在常規比賽期間，24秒才跟著主時鐘倒數
                     if (state.statusType === 'normal' && state.shotSeconds > 0) {
                         state.shotSeconds--;
-                        if (state.shotSeconds === 0) {
-                            triggerBuzzer(); // 24秒違例蜂鳴器
-                        }
+                        if (state.shotSeconds === 0) triggerBuzzer();
                     }
                 } else {
-                    // 主計時器歸零
                     state.mainSeconds = 0;
-                    if (state.statusType === 'normal') state.shotSeconds = 0;
                     pauseTimer();
                     triggerBuzzer();
-                    
-                    if (state.statusType === 'normal') {
-                        alert(`第 ${state.currentPeriod} 節比賽結束！`);
-                    } else {
-                        alert("計時結束！");
-                        state.statusType = 'normal';
-                    }
+                    state.statusType = 'normal';
                 }
                 updateDisplay();
+                broadcastState(); // 每秒數據跳動自動同步
             }, 1000);
         }
 
         function pauseTimer() {
             state.timerRunning = false;
             clearInterval(countdownInterval);
-            document.getElementById('main-timer-control').innerText = "開始時間";
-            document.getElementById('main-timer-control').className = "bg-green-600 hover:bg-green-500 text-white font-bold px-6 py-2 rounded-lg text-sm transition shadow";
-            document.getElementById('bc-timer-control').innerText = "時間開始/暫停";
-            document.getElementById('bc-timer-control').className = "bg-green-600 text-white font-bold px-4 py-1.5 rounded text-xs";
+            document.getElementById('main-timer-control').className = "col-span-1 bg-amber-600 text-neutral-950 font-bold py-2 text-xs uppercase";
+            broadcastState();
         }
 
-        function resetShotClock(secs) {
-            state.shotSeconds = secs;
-            updateDisplay();
-        }
-
-        // 啟動特殊計時（如：暫停、中場休息等）
-        function startSpecialTimer(type) {
+        function startSpecialTimer(type, secs) {
+            if (state.isViewer) return;
             pauseTimer();
             state.statusType = type;
-            if (type === 'timeout') {
-                state.mainSeconds = state.config.timeoutSec;
-            } else if (type === 'intermission') {
-                state.mainSeconds = state.config.intermissionMin * 60;
-            } else if (type === 'halftime') {
-                state.mainSeconds = state.config.halftimeMin * 60;
-            } else if (type === 'ot') {
-                state.mainSeconds = state.config.otMin * 60;
-            }
-            updateDisplay();
+            state.mainSeconds = secs;
+            updateDisplay(); broadcastState();
             startTimer();
         }
 
-        // 模擬電子蜂鳴器音效 (Web Audio API)
         function triggerBuzzer() {
             try {
                 const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
                 const oscillator = audioCtx.createOscillator();
                 const gainNode = audioCtx.createGain();
-                
-                oscillator.connect(gainNode);
-                gainNode.connect(audioCtx.destination);
-                
-                oscillator.type = 'sawtooth'; // 鋸齒波，最像球場鳴笛聲
-                oscillator.frequency.setValueAtTime(320, audioCtx.currentTime); // 低沉宏亮頻率
-                gainNode.gain.setValueAtTime(0.6, audioCtx.currentTime);
-                
-                oscillator.start();
-                // 鳴笛持續 1.5 秒
-                setTimeout(() => {
-                    oscillator.stop();
-                }, 1500);
-            } catch (e) {
-                console.log("瀏覽器阻擋音效自動播放，需有使用者點擊互動。");
-            }
+                oscillator.connect(gainNode); gainNode.connect(audioCtx.destination);
+                oscillator.type = 'sawtooth'; oscillator.frequency.setValueAtTime(180, audioCtx.currentTime);
+                gainNode.gain.setValueAtTime(0.8, audioCtx.currentTime);
+                oscillator.start(); setTimeout(() => { oscillator.stop(); }, 1800);
+            } catch (e) {}
         }
 
-        // 模式切換邏輯
+        // 介面模式與全螢幕切換
+        function toggleFullscreen() {
+            if (!document.fullscreenElement) {
+                document.documentElement.requestFullscreen().catch(err => alert(`無法進入全螢幕: ${err.message}`));
+            } else { document.exitFullscreen(); }
+        }
+
         function switchMode(mode) {
             state.mode = mode;
             const btnBig = document.getElementById('btn-mode-big');
@@ -615,53 +694,39 @@
             const bcView = document.getElementById('broadcast-view');
 
             if (mode === 'bigscreen') {
-                btnBig.className = "bg-orange-500 text-white px-3 py-1.5 rounded text-sm font-medium";
-                btnBc.className = "bg-slate-700 hover:bg-slate-600 text-slate-300 px-3 py-1.5 rounded text-sm font-medium";
-                btnChroma.classList.add('hidden');
-                bigView.classList.remove('hidden');
-                bcView.classList.add('hidden');
-                // 還原大螢幕背景
-                document.body.className = "bg-slate-900 text-slate-100 min-h-screen";
+                btnBig.className = "bg-white text-neutral-950 px-3 py-1 text-xs font-bold uppercase";
+                btnBc.className = "bg-neutral-900 text-neutral-400 hover:text-white px-3 py-1 text-xs font-bold uppercase border border-neutral-800";
+                btnChroma.classList.add('hidden'); bigView.classList.remove('hidden'); bcView.classList.add('hidden');
+                document.body.className = "bg-neutral-950 text-neutral-100 min-h-screen";
                 state.isChromaOn = false;
             } else {
-                btnBc.className = "bg-orange-500 text-white px-3 py-1.5 rounded text-sm font-medium";
-                btnBig.className = "bg-slate-700 hover:bg-slate-600 text-slate-300 px-3 py-1.5 rounded text-sm font-medium";
-                btnChroma.classList.remove('hidden');
-                bigView.classList.add('hidden');
-                bcView.classList.remove('hidden');
+                btnBc.className = "bg-white text-neutral-950 px-3 py-1 text-xs font-bold uppercase";
+                btnBig.className = "bg-neutral-900 text-neutral-400 hover:text-white px-3 py-1 text-xs font-bold uppercase border border-neutral-800";
+                if(!state.isViewer) btnChroma.classList.remove('hidden');
+                bigView.classList.add('hidden'); bcView.classList.remove('hidden');
             }
         }
 
-        // 綠幕去背功能切換
         function toggleChroma() {
             state.isChromaOn = !state.isChromaOn;
             const btnChroma = document.getElementById('btn-chroma');
             if (state.isChromaOn) {
-                document.body.className = "bg-[#00ff00] text-slate-100 min-h-screen"; // 標準 OBS 綠幕
-                btnChroma.className = "bg-red-600 text-white px-3 py-1.5 rounded text-sm font-medium";
-                btnChroma.innerText = "關閉去背綠幕";
+                document.body.className = "bg-[#00ff00] text-neutral-100 min-h-screen";
+                btnChroma.className = "bg-red-600 text-white px-3 py-1 text-xs font-bold uppercase";
             } else {
-                document.body.className = "bg-slate-900 text-slate-100 min-h-screen";
-                btnChroma.className = "bg-slate-700 text-slate-300 px-3 py-1.5 rounded text-sm font-medium";
-                btnChroma.innerText = "切換去背綠幕";
+                document.body.className = "bg-neutral-950 text-neutral-100 min-h-screen";
+                btnChroma.className = "bg-neutral-900 text-neutral-400 px-3 py-1 text-xs font-bold border border-neutral-800 uppercase";
             }
         }
 
-        // 將當前的完整網頁狀態（含當前輸入的圖片Base64）下載為獨立 HTML 檔案
-        function downloadPage() {
-            pauseTimer();
-            // 獲取當前最新的整個 HTML 內容
-            const htmlContent = document.documentElement.outerHTML;
-            const blob = new Blob([htmlContent], { type: 'text/html' });
-            const url = URL.createObjectURL(blob);
-            
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = '我的專屬籃球記分板.html';
-            document.body.appendChild(a);
-            a.click();
-            document.body.removeChild(a);
-            URL.revokeObjectURL(url);
+        function backToSetup() {
+            if(confirm("確定離開目前連線？")) {
+                pauseTimer();
+                if(mqttClient) mqttClient.end();
+                updateSyncStatus('offline');
+                document.getElementById('scoreboard-screen').classList.add('hidden');
+                document.getElementById('setup-screen').classList.remove('hidden');
+            }
         }
     </script>
 </body>
