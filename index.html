@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>阿簽牌專業籃球比分顯示及控制器</title>
+    <title>NBA PRO 雲端同步記分板系統</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Anta&family=Oswald:wght@500;700&display=swap" rel="stylesheet">
     <script src="https://unpkg.com/mqtt@4.3.7/dist/mqtt.min.js"></script>
@@ -672,8 +672,11 @@
                 const oscillator = audioCtx.createOscillator();
                 const gainNode = audioCtx.createGain();
                 oscillator.connect(gainNode); gainNode.connect(audioCtx.destination);
-                oscillator.type = 'sawtooth'; oscillator.frequency.setValueAtTime(180, audioCtx.currentTime);
+                
+                oscillator.type = 'sawtooth'; 
+                oscillator.frequency.setValueAtTime(320, audioCtx.currentTime);
                 gainNode.gain.setValueAtTime(0.8, audioCtx.currentTime);
+               
                 oscillator.start(); setTimeout(() => { oscillator.stop(); }, 1800);
             } catch (e) {}
         }
